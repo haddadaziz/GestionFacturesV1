@@ -1,0 +1,39 @@
+<div style="padding: 30px; font-family: Arial, sans-serif;">
+  <h2 style="color: #2c3e50; border-bottom: 2px solid #34495e; padding-bottom: 10px;">
+    MATEK-IT — Pilotage & Facturation Électronique
+  </h2>
+  
+  <h3 style="margin-top: 20px; color: #7f8c8d;">Liste des factures chargées depuis l'API .NET</h3>
+
+  <table style="width: 100%; border-collapse: collapse; margin-top: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <thead>
+      <tr style="background-color: #34495e; color: white; text-align: left;">
+        <th style="padding: 12px;">N° Facture</th>
+        <th style="padding: 12px;">Montant HT</th>
+        <th style="padding: 12px;">Montant TTC</th>
+        <th style="padding: 12px;">Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (f of factures; track f.id) {
+        <tr style="border-bottom: 1px solid #ddd;">
+          <td style="padding: 12px; font-weight: bold;">{{ f.numeroFacture }}</td>
+          <td style="padding: 12px;">{{ f.montantHT }} DH</td>
+          <td style="padding: 12px; color: #27ae60; font-weight: bold;">{{ f.montantTTC }} DH</td>
+          <td style="padding: 12px;">
+            <span style="padding: 4px 8px; background-color: #f1c40f; color: white; border-radius: 4px; font-size: 12px;">
+              {{ f.statut === 0 ? 'Brouillon' : 'Validé' }}
+            </span>
+          </td>
+        </tr>
+      } @empty {
+        <!-- S'affiche automatiquement si le tableau est vide -->
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 20px; color: #95a5a6; font-style: italic;">
+            Aucune facture trouvée dans la base de données SQLite.
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
