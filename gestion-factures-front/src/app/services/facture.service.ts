@@ -19,4 +19,12 @@ export class FactureService {
   addFacture(facture: Facture): Observable<Facture> {
     return this.http.post<Facture>(this.apiUrl, facture);
   }
+
+  updateFacture(id: string, facture: Facture): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}`, facture);
+  }
+
+  deleteFacture(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }

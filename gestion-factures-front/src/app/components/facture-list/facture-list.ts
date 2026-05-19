@@ -1,7 +1,11 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FactureService } from '../../services/facture.service';
+import { ClientService } from '../../services/client.service';
+import { SocieteService } from '../../services/societe.service';
 import { Facture } from '../../models/facture';
+import { Client } from '../../models/client';
+import { Societe } from '../../models/societe';
 
 import { interval, Subscription } from 'rxjs';
 import { startWith, switchMap } from 'rxjs/operators';
@@ -11,6 +15,38 @@ import { startWith, switchMap } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule],
   template: `
+    <!-- Modal de confirmation de suppression (Theme Bleu & Blanc) -->
+    @if (showDeleteConfirm) {
+      <div style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 9999; display: flex; justify-content: center; align-items: center; animation: fadeInOverlay 0.3s ease-out;">
+        
+        <div style="background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 420px; overflow: hidden; animation: popupBounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-top: 5px solid var(--primary-color, #2563eb);">
+          
+          <div style="padding: 32px 32px 24px 32px; text-align: center;">
+            <div style="width: 64px; height: 64px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; box-shadow: 0 0 0 8px #f8fafc;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color, #2563eb)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+            </div>
+            
+            <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">Supprimer ce brouillon ?</h3>
+            <p style="margin: 0; color: #64748b; font-size: 15px; line-height: 1.5;">
+              Êtes-vous sûr de vouloir supprimer cette facture ? Cette action est irréversible et supprimera toutes les lignes associées.
+            </p>
+          </div>
+          
+          <div style="background: #f8fafc; padding: 20px 32px; display: flex; gap: 16px;">
+            <button (click)="annulerSuppression()" style="flex: 1; padding: 12px; background: white; color: var(--primary-color, #2563eb); border: 2px solid var(--primary-color, #2563eb); border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='white'">
+              Annuler
+            </button>
+            <button (click)="confirmerSuppression()" style="flex: 1; padding: 12px; background: var(--primary-color, #2563eb); color: white; border: 2px solid var(--primary-color, #2563eb); border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(37, 99, 235, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(37, 99, 235, 0.2)';">
+              Confirmer
+            </button>
+          </div>
+          
+        </div>
+      </div>
+    }
+
     <div style="background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--border-color); overflow: hidden;">
       
       <!-- Header du tableau -->
@@ -36,6 +72,7 @@ import { startWith, switchMap } from 'rxjs/operators';
               <th style="padding: 16px 24px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em;">Montant HT</th>
               <th style="padding: 16px 24px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em;">Montant TTC</th>
               <th style="padding: 16px 24px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em;">Statut</th>
+              <th style="padding: 16px 24px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em; text-align: right;">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -44,14 +81,10 @@ import { startWith, switchMap } from 'rxjs/operators';
                 <td style="padding: 16px 24px; font-weight: 600; color: var(--text-main);">{{ f.numeroFacture }}</td>
                 <td style="padding: 16px 24px; color: var(--text-muted);">
                   <div style="font-weight: 500; color: var(--text-main);">
-                    {{ f.clientId === '11111111-1111-1111-1111-111111111111' ? 'Tech Corp' : 
-                       f.clientId === '22222222-2222-2222-2222-222222222222' ? 'Web Solutions' : 
-                       'Client ' + (f.clientId | slice:0:8) }}
+                    {{ getClientName(f.clientId) }}
                   </div>
                   <div style="font-size: 12px; color: var(--text-muted);">
-                    {{ f.tenantId === 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' ? 'MATEK-IT France' : 
-                       f.tenantId === 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb' ? 'MATEK-IT International' : 
-                       'Société ' + (f.tenantId | slice:0:8) }}
+                    {{ getSocieteName(f.tenantId) }}
                   </div>
                 </td>
                 <td style="padding: 16px 24px; color: var(--text-muted);">{{ f.dateEmission | date:'dd/MM/yyyy' }}</td>
@@ -67,6 +100,16 @@ import { startWith, switchMap } from 'rxjs/operators';
                   }
                   @if (f.statut === 2) {
                     <span style="background-color: var(--status-paid-bg); color: var(--status-paid-text); padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600;">Payée</span>
+                  }
+                </td>
+                <td style="padding: 16px 24px; text-align: right;">
+                  @if (f.statut === 0) {
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                      <button (click)="modifierFacture(f)" style="padding: 6px 12px; background: #e0f2fe; color: #0284c7; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Modifier</button>
+                      <button (click)="demanderSuppression(f.id!)" style="padding: 6px 12px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Supprimer</button>
+                    </div>
+                  } @else {
+                    <span style="color: var(--text-muted); font-size: 12px; font-style: italic;">Immuable</span>
                   }
                 </td>
               </tr>
@@ -91,17 +134,43 @@ import { startWith, switchMap } from 'rxjs/operators';
           70% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
           100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
         }
+        @keyframes fadeInOverlay {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        @keyframes popupBounceIn {
+          0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+          100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
       </style>
     </div>
   `
 })
 export class FactureListComponent implements OnInit, OnDestroy {
   factures = signal<Facture[]>([]); 
+  clients = signal<Client[]>([]);
+  societes = signal<Societe[]>([]);
   private pollingSubscription!: Subscription;
 
-  constructor(private factureService: FactureService) {}
+  constructor(
+    private factureService: FactureService,
+    private clientService: ClientService,
+    private societeService: SocieteService
+  ) {}
 
   ngOnInit(): void {
+    // Charger les clients et les sociétés une seule fois
+    this.clientService.getClients().subscribe({
+      next: (data) => this.clients.set(data),
+      error: (err) => console.error('Erreur chargement clients:', err)
+    });
+
+    this.societeService.getSocietes().subscribe({
+      next: (data) => this.societes.set(data),
+      error: (err) => console.error('Erreur chargement sociétés:', err)
+    });
+
+    // Polling des factures
     this.pollingSubscription = interval(3000)
       .pipe(
         startWith(0),
@@ -115,6 +184,51 @@ export class FactureListComponent implements OnInit, OnDestroy {
         },
         error: (err) => console.error('Erreur API:', err)
       });
+  }
+
+  getClientName(id: string): string {
+    const client = this.clients().find(c => c.id === id);
+    return client ? 'Client ' + client.nom : 'Client inconnu (' + id.substring(0, 8) + ')';
+  }
+
+  getSocieteName(id: string): string {
+    const societe = this.societes().find(s => s.id === id);
+    return societe ? 'Société ' + societe.nom : 'Société inconnue (' + id.substring(0, 8) + ')';
+  }
+
+  @Output() editFactureEvent = new EventEmitter<Facture>();
+  
+  showDeleteConfirm = false;
+  factureToDeleteId: string | null = null;
+
+  modifierFacture(facture: Facture) {
+    // Émet l'événement pour ouvrir le formulaire en mode édition (à implémenter dans le parent)
+    this.editFactureEvent.emit(facture);
+    console.log('Modification demandée pour la facture', facture.id);
+  }
+
+  demanderSuppression(id: string) {
+    this.factureToDeleteId = id;
+    this.showDeleteConfirm = true;
+  }
+
+  confirmerSuppression() {
+    if (this.factureToDeleteId) {
+      const id = this.factureToDeleteId;
+      this.factureService.deleteFacture(id).subscribe({
+        next: () => {
+          // Mise à jour locale immédiate en attendant le prochain polling
+          this.factures.update(facts => facts.filter(f => f.id !== id));
+          this.annulerSuppression();
+        },
+        error: (err) => console.error('Erreur lors de la suppression:', err)
+      });
+    }
+  }
+
+  annulerSuppression() {
+    this.showDeleteConfirm = false;
+    this.factureToDeleteId = null;
   }
 
   ngOnDestroy(): void {

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FactureListComponent } from './components/facture-list/facture-list';
 import { FactureFormComponent } from './components/facture-form/facture-form';
+import { Facture } from './models/facture';
 
 @Component({
   selector: 'app-root',
@@ -34,7 +35,7 @@ import { FactureFormComponent } from './components/facture-form/facture-form';
 
       <!-- Main Content Container (Uniquement la liste) -->
       <main style="max-width: 1280px; margin: 40px auto 0; padding: 0 24px;">
-        <app-facture-list></app-facture-list>
+        <app-facture-list (editFactureEvent)="openModal($event)"></app-facture-list>
       </main>
 
       <!-- Modal Overlay -->
@@ -45,7 +46,7 @@ import { FactureFormComponent } from './components/facture-form/facture-form';
           
           <!-- Modal Content -->
           <div style="position: relative; width: 100%; max-width: 800px; z-index: 51; animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
-            <app-facture-form (closeForm)="closeModal()"></app-facture-form>
+            <app-facture-form [factureToEdit]="factureToEdit" (closeForm)="closeModal()"></app-facture-form>
           </div>
         </div>
       }
@@ -61,14 +62,21 @@ import { FactureFormComponent } from './components/facture-form/facture-form';
 })
 export class AppComponent {
   isModalOpen = false;
+  factureToEdit: Facture | null = null;
 
-  openModal() {
+  openModal(facture?: Facture) {
+    if (facture) {
+      this.factureToEdit = facture;
+    } else {
+      this.factureToEdit = null;
+    }
     this.isModalOpen = true;
     document.body.style.overflow = 'hidden'; // Empêche le scroll de la page derrière
   }
 
   closeModal() {
     this.isModalOpen = false;
+    this.factureToEdit = null;
     document.body.style.overflow = '';
   }
 }

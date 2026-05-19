@@ -3912,11 +3912,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\HP ZbooK\\Desktop\\GestionFacturesAPI\\GestionFacturesAPI.csproj",
+      "projectUniqueName": "C:\\Users\\HP ZbooK\\Desktop\\GestionFactures\\GestionFacturesAPI\\GestionFacturesAPI.csproj",
       "projectName": "GestionFacturesAPI",
-      "projectPath": "C:\\Users\\HP ZbooK\\Desktop\\GestionFacturesAPI\\GestionFacturesAPI.csproj",
+      "projectPath": "C:\\Users\\HP ZbooK\\Desktop\\GestionFactures\\GestionFacturesAPI\\GestionFacturesAPI.csproj",
       "packagesPath": "C:\\Users\\HP ZbooK\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\HP ZbooK\\Desktop\\GestionFacturesAPI\\obj\\",
+      "outputPath": "C:\\Users\\HP ZbooK\\Desktop\\GestionFactures\\GestionFacturesAPI\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
