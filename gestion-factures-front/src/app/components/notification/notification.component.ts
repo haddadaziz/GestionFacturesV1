@@ -11,7 +11,7 @@ import { NotificationService } from '../../services/notification.service';
       @for (notif of notificationService.notifications(); track notif.id) {
         <div
           [style.animation]="notif.removing ? 'toastSlideOut 0.4s ease-in forwards' : 'toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)'"
-          style="pointer-events: all; background: white; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); width: 380px; overflow: hidden; display: flex; align-items: stretch;">
+          style="pointer-events: all; background: var(--card-bg); border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); width: 380px; overflow: hidden; display: flex; align-items: stretch;">
           
           <!-- Bande de couleur latérale -->
           <div [style.background]="notif.type === 'success' ? '#16a34a' : '#dc2626'" style="width: 5px; flex-shrink: 0;"></div>

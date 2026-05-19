@@ -19,7 +19,7 @@ import { startWith, switchMap } from 'rxjs/operators';
     <!-- Modal de confirmation de changement de statut (Theme Bleu & Blanc) -->
     @if (showStatutConfirm) {
       <div style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 9999; display: flex; justify-content: center; align-items: center; animation: fadeInOverlay 0.3s ease-out;">
-        <div style="background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 420px; overflow: hidden; animation: popupBounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-top: 5px solid var(--primary-color, #2563eb);">
+        <div style="background: var(--card-bg); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 420px; overflow: hidden; animation: popupBounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-top: 5px solid var(--primary-color, #2563eb);">
           <div style="padding: 32px 32px 24px 32px; text-align: center;">
             <div style="width: 64px; height: 64px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; box-shadow: 0 0 0 8px #f8fafc;">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color, #2563eb)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -51,7 +51,7 @@ import { startWith, switchMap } from 'rxjs/operators';
     @if (showDeleteConfirm) {
       <div style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 9999; display: flex; justify-content: center; align-items: center; animation: fadeInOverlay 0.3s ease-out;">
         
-        <div style="background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 420px; overflow: hidden; animation: popupBounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-top: 5px solid var(--primary-color, #2563eb);">
+        <div style="background: var(--card-bg); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 420px; overflow: hidden; animation: popupBounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-top: 5px solid var(--primary-color, #2563eb);">
           
           <div style="padding: 32px 32px 24px 32px; text-align: center;">
             <div style="width: 64px; height: 64px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; box-shadow: 0 0 0 8px #f8fafc;">
@@ -82,7 +82,7 @@ import { startWith, switchMap } from 'rxjs/operators';
     <div style="background: var(--card-bg); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--border-color); overflow: hidden;">
       
       <!-- Header du tableau -->
-      <div style="padding: 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: white;">
+      <div style="padding: 24px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background-color: var(--card-bg);">
         <div>
           <h2 style="margin: 0 0 4px 0; color: var(--text-main); font-size: 18px; font-weight: 600;">Historique des Factures</h2>
           <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Consultez et suivez l'état de vos factures.</p>
@@ -105,7 +105,7 @@ import { startWith, switchMap } from 'rxjs/operators';
           </thead>
           <tbody>
             @for (f of factures(); track f.id) {
-              <tr style="border-bottom: 1px solid var(--border-color); background-color: white; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.backgroundColor='white'">
+              <tr style="border-bottom: 1px solid var(--border-color); background-color: var(--card-bg); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='var(--row-hover-bg)'" onmouseout="this.style.backgroundColor='var(--card-bg)'">
                 <td style="padding: 16px 24px; font-weight: 600; color: var(--text-main);">{{ f.numeroFacture }}</td>
                 <td style="padding: 16px 24px; color: var(--text-muted);">
                   <div style="font-weight: 500; color: var(--text-main);">

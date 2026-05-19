@@ -7,6 +7,7 @@
   --text-main: #0f172a;
   --text-muted: #64748b;
   --border-color: #e2e8f0;
+  --row-hover-bg: #f1f5f9;
   
   /* Status Colors */
   --status-draft-bg: #f1f5f9;
@@ -47,4 +48,22 @@ input, select, button {
 /* Animation douce pour les transitions */
 .transition-all {
   transition: all 0.2s ease-in-out;
+}
+
+[data-theme="dark"] {
+  --primary-color: #60a5fa;
+  --primary-hover: #3b82f6;
+  --bg-color: #0f172a;
+  --card-bg: #2d3b4f;
+  --text-main: #e2e8f0;
+  --text-muted: #b0c4db;
+  --border-color: #465670;
+  --row-hover-bg: #3b4c5c;
+  /* Status Colors Dark */
+  --status-draft-bg: #2e3a4d;
+  --status-draft-text: #94a3b8;
+  --status-pending-bg: #2c2b27;
+  --status-pending-text: #fbbf24;
+  --status-paid-bg: #125e30;
+  --status-paid-text: #34d399;
 }
