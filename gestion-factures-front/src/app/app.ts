@@ -2,13 +2,17 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FactureListComponent } from './components/facture-list/facture-list';
 import { FactureFormComponent } from './components/facture-form/facture-form';
+import { NotificationComponent } from './components/notification/notification.component';
 import { Facture } from './models/facture';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FactureListComponent, FactureFormComponent],
+  imports: [CommonModule, FactureListComponent, FactureFormComponent, NotificationComponent],
   template: `
+    <!-- Notifications Toasts globales -->
+    <app-notification></app-notification>
+
     <div style="min-height: 100vh; background-color: var(--bg-color); padding-bottom: 60px;">
       
       <!-- Top Navigation Bar -->

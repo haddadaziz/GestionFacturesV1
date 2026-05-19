@@ -24,6 +24,12 @@ export class FactureService {
     return this.http.put<void>(`${this.apiUrl}/${id}`, facture);
   }
 
+  updateFactureStatut(id: string, statut: number): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${id}/statut`, statut, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   deleteFacture(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }

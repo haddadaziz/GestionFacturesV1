@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,6 +103,33 @@ app.MapPut("/api/factures/{id:guid}", async (Guid id, GestionFacturesAPI.Models.
     return Results.NoContent();
 })
 .WithName("UpdateFacture");
+
+// PATCH : Mettre à jour le statut d'une facture
+app.MapPatch("/api/factures/{id:guid}/statut", async (Guid id, [FromBody] int nouveauStatut, GestionFacturesAPI.Data.AppDbContext context) =>
+{
+    var factureDb = await context.Factures.FirstOrDefaultAsync(f => f.Id == id);
+    if (factureDb == null) return Results.NotFound();
+
+    // Règles de transition : 0 -> 1 ou 2, 1 -> 2
+    if (factureDb.Statut == 2)
+    {
+        return Results.BadRequest("Une facture payée ne peut plus changer de statut.");
+    }
+    if (factureDb.Statut == 1 && nouveauStatut == 0)
+    {
+        return Results.BadRequest("Une facture en attente ne peut pas redevenir un brouillon.");
+    }
+    if (nouveauStatut < 0 || nouveauStatut > 2)
+    {
+        return Results.BadRequest("Statut invalide.");
+    }
+
+    factureDb.Statut = nouveauStatut;
+    await context.SaveChangesAsync();
+    
+    return Results.NoContent();
+})
+.WithName("UpdateFactureStatut");
 
 // DELETE : Supprimer une facture
 app.MapDelete("/api/factures/{id:guid}", async (Guid id, GestionFacturesAPI.Data.AppDbContext context) =>

@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } fr
 import { FactureService } from '../../services/facture.service';
 import { ClientService } from '../../services/client.service';
 import { SocieteService } from '../../services/societe.service';
+import { NotificationService } from '../../services/notification.service';
 import { Facture, LigneFacture } from '../../models/facture';
 import { Client } from '../../models/client';
 import { Societe } from '../../models/societe';
@@ -169,7 +170,7 @@ import { Societe } from '../../models/societe';
             onmouseover="this.style.backgroundColor='#e2e8f0'" onmouseout="this.style.backgroundColor='var(--bg-color)'">
             Annuler
           </button>
-          <button type="submit" [disabled]="factureForm.invalid || lignesControl.length === 0" 
+          <button type="submit" 
             style="flex: 2; padding: 12px 24px; background-color: var(--primary-color); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 14px; font-weight: 600; box-shadow: var(--shadow-sm); transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px;"
             onmouseover="if(!this.disabled) this.style.backgroundColor='var(--primary-hover)'" 
             onmouseout="if(!this.disabled) this.style.backgroundColor='var(--primary-color)'">
@@ -200,7 +201,8 @@ export class FactureFormComponent implements OnInit {
     private fb: FormBuilder, 
     private factureService: FactureService,
     private clientService: ClientService,
-    private societeService: SocieteService
+    private societeService: SocieteService,
+    private notificationService: NotificationService
   ) {
     const today = new Date();
     const echeance = new Date();
@@ -271,14 +273,24 @@ export class FactureFormComponent implements OnInit {
 
   loadClients() {
     this.clientService.getClients().subscribe({
-      next: (data) => this.clients = data,
+      next: (data) => {
+        this.clients = data;
+        if (this.factureToEdit) {
+          this.factureForm.patchValue({ clientId: this.factureToEdit.clientId });
+        }
+      },
       error: (err) => console.error('Erreur chargement clients', err)
     });
   }
 
   loadSocietes() {
     this.societeService.getSocietes().subscribe({
-      next: (data) => this.societes = data,
+      next: (data) => {
+        this.societes = data;
+        if (this.factureToEdit) {
+          this.factureForm.patchValue({ tenantId: this.factureToEdit.tenantId });
+        }
+      },
       error: (err) => console.error('Erreur chargement sociétés', err)
     });
   }
@@ -291,9 +303,15 @@ export class FactureFormComponent implements OnInit {
           this.factureForm.patchValue({ clientId: nouveauClient.id });
           this.showClientModal = false;
           this.clientForm.reset();
+          this.notificationService.showSuccess('Client ajouté avec succès.');
         },
-        error: (err) => console.error('Erreur ajout client', err)
+        error: (err) => {
+          console.error('Erreur ajout client', err);
+          this.notificationService.showError("Erreur lors de l'ajout du client.");
+        }
       });
+    } else {
+      this.notificationService.showError('Veuillez remplir tous les champs du client (nom, email, adresse).');
     }
   }
 
@@ -305,9 +323,15 @@ export class FactureFormComponent implements OnInit {
           this.factureForm.patchValue({ tenantId: nouvelleSociete.id });
           this.showSocieteModal = false;
           this.societeForm.reset();
+          this.notificationService.showSuccess('Société ajoutée avec succès.');
         },
-        error: (err) => console.error('Erreur ajout société', err)
+        error: (err) => {
+          console.error('Erreur ajout société', err);
+          this.notificationService.showError("Erreur lors de l'ajout de la société.");
+        }
       });
+    } else {
+      this.notificationService.showError('Veuillez remplir tous les champs de la société (nom, adresse, SIRET).');
     }
   }
 
@@ -346,7 +370,48 @@ export class FactureFormComponent implements OnInit {
   }
 
   onSubmit() {
-    if (this.factureForm.valid && this.lignesControl.length > 0) {
+    // Validations détaillées
+    const fc = this.factureForm.controls;
+
+    if (!fc['numeroFacture'].value) {
+      this.notificationService.showError('Veuillez saisir un numéro de facture.');
+      return;
+    }
+    if (!fc['clientId'].value) {
+      this.notificationService.showError('Veuillez sélectionner un client.');
+      return;
+    }
+    if (!fc['tenantId'].value) {
+      this.notificationService.showError('Veuillez sélectionner une société.');
+      return;
+    }
+    if (!fc['dateEmission'].value) {
+      this.notificationService.showError("Veuillez saisir une date d'émission.");
+      return;
+    }
+    if (!fc['dateEcheance'].value) {
+      this.notificationService.showError("Veuillez saisir une date d'échéance.");
+      return;
+    }
+    if (this.lignesControl.length === 0) {
+      this.notificationService.showError('Veuillez ajouter au moins une ligne à la facture.');
+      return;
+    }
+
+    // Vérifier chaque ligne
+    for (let i = 0; i < this.lignesControl.length; i++) {
+      const ligne = this.lignesControl.at(i);
+      if (!ligne.get('designation')?.value) {
+        this.notificationService.showError(`Veuillez saisir la désignation de la ligne ${i + 1}.`);
+        return;
+      }
+      if (!ligne.get('quantite')?.value || ligne.get('quantite')?.value < 1) {
+        this.notificationService.showError(`La quantité de la ligne ${i + 1} doit être supérieure à 0.`);
+        return;
+      }
+    }
+
+    if (this.factureForm.valid) {
       const formValues = this.factureForm.value;
       
       const nouvelleFacture: Facture = {
@@ -366,18 +431,28 @@ export class FactureFormComponent implements OnInit {
         nouvelleFacture.id = this.factureToEdit.id;
         this.factureService.updateFacture(this.factureToEdit.id, nouvelleFacture).subscribe({
           next: () => {
+            this.notificationService.showSuccess('Facture modifiée avec succès.');
             this.closeForm.emit();
           },
-          error: (err: any) => console.error('Erreur lors de la modification:', err) 
+          error: (err: any) => {
+            console.error('Erreur lors de la modification:', err);
+            this.notificationService.showError('Erreur lors de la modification de la facture.');
+          }
         });
       } else {
         this.factureService.addFacture(nouvelleFacture).subscribe({
           next: () => {
+            this.notificationService.showSuccess('Facture créée avec succès.');
             this.closeForm.emit();
           },
-          error: (err: any) => console.error("Erreur lors de l'ajout:", err) 
+          error: (err: any) => {
+            console.error("Erreur lors de l'ajout:", err);
+            this.notificationService.showError("Erreur lors de la création de la facture.");
+          }
         });
       }
+    } else {
+      this.notificationService.showError('Veuillez corriger les erreurs dans le formulaire.');
     }
   }
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FactureService } from '../../services/facture.service';
 import { ClientService } from '../../services/client.service';
 import { SocieteService } from '../../services/societe.service';
+import { NotificationService } from '../../services/notification.service';
 import { Facture } from '../../models/facture';
 import { Client } from '../../models/client';
 import { Societe } from '../../models/societe';
@@ -15,6 +16,37 @@ import { startWith, switchMap } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule],
   template: `
+    <!-- Modal de confirmation de changement de statut (Theme Bleu & Blanc) -->
+    @if (showStatutConfirm) {
+      <div style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 9999; display: flex; justify-content: center; align-items: center; animation: fadeInOverlay 0.3s ease-out;">
+        <div style="background: white; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); width: 420px; overflow: hidden; animation: popupBounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-top: 5px solid var(--primary-color, #2563eb);">
+          <div style="padding: 32px 32px 24px 32px; text-align: center;">
+            <div style="width: 64px; height: 64px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; box-shadow: 0 0 0 8px #f8fafc;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color, #2563eb)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            
+            <h3 style="margin: 0 0 10px 0; color: #1e293b; font-size: 22px; font-weight: 700; letter-spacing: -0.02em;">Changer le statut ?</h3>
+            <p style="margin: 0; color: #64748b; font-size: 15px; line-height: 1.5;">
+              Voulez-vous vraiment passer cette facture en 
+              <strong style="color: #1e293b;">{{ statutConfirmData?.nouveauStatut === 1 ? 'En attente' : 'Payée' }}</strong> ?
+              <br><span style="color: #ef4444; font-size: 13px; font-weight: 600;">Attention : La facture deviendra immuable (modification et suppression impossibles).</span>
+            </p>
+          </div>
+          
+          <div style="background: #f8fafc; padding: 20px 32px; display: flex; gap: 16px;">
+            <button (click)="annulerStatut()" style="flex: 1; padding: 12px; background: white; color: var(--primary-color, #2563eb); border: 2px solid var(--primary-color, #2563eb); border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#eff6ff'" onmouseout="this.style.backgroundColor='white'">
+              Annuler
+            </button>
+            <button (click)="confirmerStatut()" style="flex: 1; padding: 12px; background: var(--primary-color, #2563eb); color: white; border: 2px solid var(--primary-color, #2563eb); border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(37, 99, 235, 0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(37, 99, 235, 0.2)';">
+              Confirmer
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Modal de confirmation de suppression (Theme Bleu & Blanc) -->
     @if (showDeleteConfirm) {
       <div style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); z-index: 9999; display: flex; justify-content: center; align-items: center; animation: fadeInOverlay 0.3s ease-out;">
@@ -55,10 +87,6 @@ import { startWith, switchMap } from 'rxjs/operators';
           <h2 style="margin: 0 0 4px 0; color: var(--text-main); font-size: 18px; font-weight: 600;">Historique des Factures</h2>
           <p style="margin: 0; color: var(--text-muted); font-size: 14px;">Consultez et suivez l'état de vos factures.</p>
         </div>
-        <div style="background-color: var(--status-draft-bg); padding: 8px 12px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
-          <span style="display: inline-block; width: 8px; height: 8px; background-color: var(--primary-color); border-radius: 50%; animation: pulse 2s infinite;"></span>
-          Synchronisation en temps réel
-        </div>
       </div>
 
       <!-- Conteneur du tableau -->
@@ -91,15 +119,22 @@ import { startWith, switchMap } from 'rxjs/operators';
                 <td style="padding: 16px 24px; color: var(--text-muted);">{{ f.montantHT | number:'1.2-2' }} MAD</td>
                 <td style="padding: 16px 24px; color: var(--text-main); font-weight: 600;">{{ f.montantTTC | number:'1.2-2' }} MAD</td>
                 <td style="padding: 16px 24px;">
-                  <!-- Badge Statut -->
+                  <!-- Badge Statut Interactif -->
                   @if (f.statut === 0) {
-                    <span style="background-color: var(--status-draft-bg); color: var(--status-draft-text); padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600;">Brouillon</span>
+                    <select (change)="changerStatut(f, $event)" style="appearance: none; background-color: var(--status-draft-bg); color: var(--status-draft-text); padding: 4px 24px 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; border: 1px solid transparent; cursor: pointer; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'12\\' height=\\'12\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%23475569\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><polyline points=\\'6 9 12 15 18 9\\'></polyline></svg>'); background-repeat: no-repeat; background-position: right 6px center; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor='var(--status-draft-text)'" onblur="this.style.borderColor='transparent'">
+                      <option value="0" selected>Brouillon</option>
+                      <option value="1">En attente</option>
+                      <option value="2">Payée</option>
+                    </select>
                   }
                   @if (f.statut === 1) {
-                    <span style="background-color: var(--status-pending-bg); color: var(--status-pending-text); padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600;">En attente</span>
+                    <select (change)="changerStatut(f, $event)" style="appearance: none; background-color: var(--status-pending-bg); color: var(--status-pending-text); padding: 4px 24px 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; border: 1px solid transparent; cursor: pointer; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'12\\' height=\\'12\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'%23ca8a04\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><polyline points=\\'6 9 12 15 18 9\\'></polyline></svg>'); background-repeat: no-repeat; background-position: right 6px center; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor='var(--status-pending-text)'" onblur="this.style.borderColor='transparent'">
+                      <option value="1" selected disabled>En attente</option>
+                      <option value="2">Payée</option>
+                    </select>
                   }
                   @if (f.statut === 2) {
-                    <span style="background-color: var(--status-paid-bg); color: var(--status-paid-text); padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600;">Payée</span>
+                    <span style="background-color: var(--status-paid-bg); color: var(--status-paid-text); padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; display: inline-block;">Payée</span>
                   }
                 </td>
                 <td style="padding: 16px 24px; text-align: right;">
@@ -155,7 +190,8 @@ export class FactureListComponent implements OnInit, OnDestroy {
   constructor(
     private factureService: FactureService,
     private clientService: ClientService,
-    private societeService: SocieteService
+    private societeService: SocieteService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -200,6 +236,52 @@ export class FactureListComponent implements OnInit, OnDestroy {
   
   showDeleteConfirm = false;
   factureToDeleteId: string | null = null;
+  
+  showStatutConfirm = false;
+  statutConfirmData: { facture: Facture, nouveauStatut: number, selectElement: HTMLSelectElement } | null = null;
+
+  changerStatut(facture: Facture, event: Event) {
+    const selectElement = event.target as HTMLSelectElement;
+    const nouveauStatut = Number(selectElement.value);
+    
+    if (nouveauStatut === facture.statut) return;
+
+    this.statutConfirmData = { facture, nouveauStatut, selectElement };
+    this.showStatutConfirm = true;
+  }
+
+  confirmerStatut() {
+    if (!this.statutConfirmData) return;
+    const { facture, nouveauStatut, selectElement } = this.statutConfirmData;
+
+    this.factureService.updateFactureStatut(facture.id!, nouveauStatut).subscribe({
+      next: () => {
+        // Mise à jour locale immédiate
+        this.factures.update(facts => facts.map(f => f.id === facture.id ? { ...f, statut: nouveauStatut } : f));
+        const statutLabel = nouveauStatut === 1 ? 'En attente' : 'Payée';
+        this.notificationService.showSuccess(`Statut de la facture mis à jour : ${statutLabel}.`);
+        this.fermerStatutConfirm();
+      },
+      error: (err) => {
+        console.error('Erreur lors du changement de statut:', err);
+        selectElement.value = facture.statut.toString();
+        this.fermerStatutConfirm();
+        this.notificationService.showError('Erreur lors de la mise à jour du statut.');
+      }
+    });
+  }
+
+  annulerStatut() {
+    if (this.statutConfirmData) {
+      this.statutConfirmData.selectElement.value = this.statutConfirmData.facture.statut.toString();
+    }
+    this.fermerStatutConfirm();
+  }
+
+  fermerStatutConfirm() {
+    this.showStatutConfirm = false;
+    this.statutConfirmData = null;
+  }
 
   modifierFacture(facture: Facture) {
     // Émet l'événement pour ouvrir le formulaire en mode édition (à implémenter dans le parent)
@@ -217,11 +299,15 @@ export class FactureListComponent implements OnInit, OnDestroy {
       const id = this.factureToDeleteId;
       this.factureService.deleteFacture(id).subscribe({
         next: () => {
-          // Mise à jour locale immédiate en attendant le prochain polling
           this.factures.update(facts => facts.filter(f => f.id !== id));
+          this.notificationService.showSuccess('Facture supprimée définitivement.');
           this.annulerSuppression();
         },
-        error: (err) => console.error('Erreur lors de la suppression:', err)
+        error: (err) => {
+          console.error('Erreur lors de la suppression:', err);
+          this.notificationService.showError('Erreur lors de la suppression de la facture.');
+          this.annulerSuppression();
+        }
       });
     }
   }
